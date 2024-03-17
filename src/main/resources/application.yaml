@@ -8,3 +8,12 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+api:
+  title: "Automatizacija razvoja softvera - projektni rad"
+  description: "Projektni rad za predmet automatizacija razvoja softvera 
+  na master studijama Fakulteta Organizacionih Nauka."
+  version: "0.0.1-SNAPSHOT"
+  contact:
+    name: "Petar Milenkovic 3822/2023"
+    email: "pm20233822@student.fon.bg.ac.rs"
+    url: "https://github.com/Petar2518"

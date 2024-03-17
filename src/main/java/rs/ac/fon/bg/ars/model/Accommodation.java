@@ -3,14 +3,18 @@ package rs.ac.fon.bg.ars.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Builder
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name="accommodations")
 public class Accommodation {
@@ -20,17 +24,14 @@ public class Accommodation {
     @SequenceGenerator(name="accommodations_id_seq", sequenceName = "accommodations_id_seq", allocationSize = 1)
     private Long id;
 
-    @NotBlank
     private String name;
 
     private String description;
 
-    @NotNull
     @Column(name="accommodation_type")
     @Enumerated(EnumType.STRING)
     private AccommodationType accommodationType;
 
-    @NotNull
     @Column(name="host_id")
     private Long hostId;
 
