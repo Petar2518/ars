@@ -9,8 +9,8 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
-    env:
-      COMPOSE_FILE: docker-compose.yml
+    container:
+      image: postgres
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
