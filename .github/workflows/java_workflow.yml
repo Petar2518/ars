@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Start containers
-        run: docker-compose -f "docker-compose.yml" up -d --build
+        run: docker-compose up -d
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -27,6 +27,3 @@ jobs:
         run: chmod +x ./gradlew
       - name: Run build with Gradle Wrapper
         run: ./gradlew build
-      - name: Stop containers
-        if: always()
-        run: docker-compose -f "docker-compose.yml" down
