@@ -22,6 +22,11 @@ databaseChangeLog:
                   constraints:
                     nullable: true
               - column:
+                  name: accommodation_type
+                  type: varchar(30)
+                  constraints:
+                    nullable: false
+              - column:
                   name: host_id
                   type: bigint
                   constraints:

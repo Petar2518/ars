@@ -7,7 +7,7 @@ databaseChangeLog:
             tableName: accommodation_amenities
             columns:
               - column:
-                  name: amenities_id
+                  name: amenity_id
                   type: bigint
                   constraints:
                     nullable: false
@@ -17,11 +17,11 @@ databaseChangeLog:
                   constraints:
                     nullable: false
         - addPrimaryKey:
-            columnNames: amenities_id, accommodation_id
+            columnNames: amenity_id, accommodation_id
             tableName: accommodation_amenities
             constraintName: pk_accommodation_amenities
         - addForeignKeyConstraint:
-            baseColumnNames: amenities_id
+            baseColumnNames: amenity_id
             baseTableName: accommodation_amenities
             constraintName: fk_accommodation_amenities_amenities
             onDelete: CASCADE
