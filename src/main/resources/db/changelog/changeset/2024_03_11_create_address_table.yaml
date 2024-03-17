@@ -7,7 +7,7 @@ databaseChangeLog:
             tableName: address
             columns:
               - column:
-                  name: id
+                  name: accommodation_id
                   type: bigint
                   constraints:
                     nullable: false
@@ -47,10 +47,10 @@ databaseChangeLog:
                   constraints:
                     nullable: true
         - addPrimaryKey:
-            columnNames: id
+            columnNames: accommodation_id
             tableName: address
         - addForeignKeyConstraint:
-            baseColumnNames: id
+            baseColumnNames: accommodation_id
             baseTableName: address
             constraintName: fk_address_accommodation
             onDelete: CASCADE
