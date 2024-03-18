@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import rs.ac.fon.bg.ars.eventListener.HibernateListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +18,7 @@ import java.util.List;
 @AllArgsConstructor
 @Entity
 @Table(name="accommodations")
+@EntityListeners(HibernateListener.class)
 public class Accommodation {
 
     @Id
@@ -35,7 +37,7 @@ public class Accommodation {
     @Column(name="host_id")
     private Long hostId;
 
-    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @ManyToMany(cascade = {CascadeType.PERSIST}, fetch=FetchType.EAGER)
     @JoinTable(name="accommodation_amenities",joinColumns = @JoinColumn(name="amenity_id"), inverseJoinColumns = @JoinColumn(name="accommodation_id"))
     private final List<Amenity> amenities = new ArrayList<>();
 

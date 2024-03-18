@@ -10,16 +10,23 @@ import rs.ac.fon.bg.ars.dto.AccommodationDto;
 import rs.ac.fon.bg.ars.dto.AccommodationUnitDto;
 import rs.ac.fon.bg.ars.dto.AccommodationUnitDtoUpdate;
 import rs.ac.fon.bg.ars.dto.PriceDto;
+import rs.ac.fon.bg.ars.dto.message.MQTransferObject;
 import rs.ac.fon.bg.ars.dto.update.PriceDtoUpdate;
 import rs.ac.fon.bg.ars.mapper.AccommodationUnitMapper;
+import rs.ac.fon.bg.ars.mapper.MessageMapper;
 import rs.ac.fon.bg.ars.mapper.PriceMapper;
 import rs.ac.fon.bg.ars.model.AccommodationType;
+import rs.ac.fon.bg.ars.model.Amenity;
+import rs.ac.fon.bg.ars.model.Price;
 import rs.ac.fon.bg.ars.util.ComponentTestBase;
+import rs.ac.fon.bg.ars.util.RabbitListenerTestComponent;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -28,6 +35,11 @@ public class PriceComponentTest extends ComponentTestBase {
     @Autowired
     PriceMapper mapper;
 
+    @Autowired
+    MessageMapper messageMapper;
+
+    @Autowired
+    RabbitListenerTestComponent rabbitListener;
     @Autowired
     WebTestClient webTestClient;
 
@@ -129,6 +141,21 @@ public class PriceComponentTest extends ComponentTestBase {
 
        PriceDto priceDtoResult = getPriceById(priceId);
 
+        MQTransferObject<Object> object = null;
+        try{
+            rabbitListener.getMqObject().poll(1000, TimeUnit.MILLISECONDS);
+            rabbitListener.getMqObject().poll(1000, TimeUnit.MILLISECONDS);
+            object=rabbitListener.getMqObject().poll(1000, TimeUnit.MILLISECONDS);
+        }catch (InterruptedException e){
+            throw new RuntimeException(e);
+        }
+
+        Price price = messageMapper.priceMessageDtoToEntity(
+                rabbitListener.hashMapToPrice((LinkedHashMap<?, ?>) object.getMessage()));
+        assertEquals(object.getEventType(),"INSERT");
+        assertEquals(object.getEntityType(),"Price");
+        assertEquals(price,mapper.domainToEntity(mapper.dtoToDomain(priceDtoResult)));
+
         assertEquals(Objects.requireNonNull(priceDtoResult).getAmount(),priceDto.getAmount());
         assertEquals(Objects.requireNonNull(priceDtoResult).getDateFrom(),priceDto.getDateFrom());
         assertEquals(Objects.requireNonNull(priceDtoResult).getDateTo(),priceDto.getDateTo());
@@ -208,6 +235,21 @@ public class PriceComponentTest extends ComponentTestBase {
 
         Assertions.assertNotNull(result);
 
+        MQTransferObject<Object> object = null;
+        try{
+            rabbitListener.getMqObject().poll(1000, TimeUnit.MILLISECONDS);
+            rabbitListener.getMqObject().poll(1000, TimeUnit.MILLISECONDS);
+            object=rabbitListener.getMqObject().poll(1000, TimeUnit.MILLISECONDS);
+        }catch (InterruptedException e){
+            throw new RuntimeException(e);
+        }
+
+        Price price = messageMapper.priceMessageDtoToEntity(
+                rabbitListener.hashMapToPrice((LinkedHashMap<?, ?>) object.getMessage()));
+        assertEquals(object.getEventType(),"INSERT");
+        assertEquals(object.getEntityType(),"Price");
+        assertEquals(price,mapper.domainToEntity(mapper.dtoToDomain(result.get(0))));
+
         PriceDtoUpdate priceDtoUpdate = PriceDtoUpdate.builder()
                 .id(priceId)
                 .amount(BigDecimal.valueOf(43.00))
@@ -223,6 +265,17 @@ public class PriceComponentTest extends ComponentTestBase {
 
         PriceDto priceResult = getPriceById(priceId);
 
+        try{
+            object=rabbitListener.getMqObject().poll(1000, TimeUnit.MILLISECONDS);
+        }catch (InterruptedException e){
+            throw new RuntimeException(e);
+        }
+
+        price = messageMapper.priceMessageDtoToEntity(
+                rabbitListener.hashMapToPrice((LinkedHashMap<?, ?>) object.getMessage()));
+        assertEquals(object.getEventType(),"UPDATE");
+        assertEquals(object.getEntityType(),"Price");
+        assertEquals(price,mapper.domainToEntity(mapper.dtoToDomain(priceResult)));
 
         assertEquals(Objects.requireNonNull(priceResult).getAmount(),priceDtoUpdate.getAmount());
         assertEquals(Objects.requireNonNull(priceResult).getDateFrom(),priceDtoUpdate.getDateFrom());
@@ -264,10 +317,38 @@ public class PriceComponentTest extends ComponentTestBase {
 
         Assertions.assertNotNull(result);
 
+        MQTransferObject<Object> object = null;
+        try{
+            rabbitListener.getMqObject().poll(1000, TimeUnit.MILLISECONDS);
+            rabbitListener.getMqObject().poll(1000, TimeUnit.MILLISECONDS);
+            object=rabbitListener.getMqObject().poll(1000, TimeUnit.MILLISECONDS);
+        }catch (InterruptedException e){
+            throw new RuntimeException(e);
+        }
+
+        Price price = messageMapper.priceMessageDtoToEntity(
+                rabbitListener.hashMapToPrice((LinkedHashMap<?, ?>) object.getMessage()));
+        assertEquals(object.getEventType(),"INSERT");
+        assertEquals(object.getEntityType(),"Price");
+        assertEquals(price,mapper.domainToEntity(mapper.dtoToDomain(result.get(0))));
+
         webTestClient.delete()
                 .uri(PRICE_URI +"/"+priceId)
                 .exchange()
                 .expectStatus().isOk();
+
+        try{
+
+            object=rabbitListener.getMqObject().poll(1000, TimeUnit.MILLISECONDS);
+        }catch (InterruptedException e){
+            throw new RuntimeException(e);
+        }
+
+        price = messageMapper.priceMessageDtoToEntity(
+                rabbitListener.hashMapToPrice((LinkedHashMap<?, ?>) object.getMessage()));
+        assertEquals(object.getEventType(),"DELETE");
+        assertEquals(object.getEntityType(),"Price");
+        assertEquals(price,mapper.domainToEntity(mapper.dtoToDomain(result.get(0))));
 
     }
 
