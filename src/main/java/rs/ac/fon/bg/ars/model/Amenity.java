@@ -2,14 +2,18 @@ package rs.ac.fon.bg.ars.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Builder
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name="amenities")
 public class Amenity {
@@ -19,7 +23,6 @@ public class Amenity {
     @SequenceGenerator(name="amenities_id_seq", sequenceName = "amenities_id_seq", allocationSize = 1)
     private Long id;
 
-    @NotEmpty
     private String amenity;
 
     @ManyToMany(mappedBy = "amenities")

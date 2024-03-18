@@ -2,11 +2,15 @@ package rs.ac.fon.bg.ars.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Builder
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name="address")
 public class Address {
@@ -18,20 +22,15 @@ public class Address {
     @MapsId
     private Accommodation accommodation;
 
-    @NotEmpty
     private String country;
 
-    @NotEmpty
     private String city;
 
-    @NotEmpty
     private String street;
 
-    @NotEmpty
     @Column(name="street_number")
     private String streetNumber;
 
-    @NotEmpty
     @Column(name="postal_code")
     private String postalCode;
 
