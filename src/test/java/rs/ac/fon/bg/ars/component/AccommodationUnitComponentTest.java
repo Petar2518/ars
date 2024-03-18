@@ -10,15 +10,21 @@ import rs.ac.fon.bg.ars.dto.AccommodationDto;
 import rs.ac.fon.bg.ars.dto.AccommodationUnitDto;
 import rs.ac.fon.bg.ars.dto.AccommodationUnitDtoUpdate;
 import rs.ac.fon.bg.ars.dto.AmenityDto;
+import rs.ac.fon.bg.ars.dto.message.MQTransferObject;
 import rs.ac.fon.bg.ars.dto.update.AccommodationDtoUpdate;
 import rs.ac.fon.bg.ars.mapper.AccommodationMapper;
 import rs.ac.fon.bg.ars.mapper.AccommodationUnitMapper;
+import rs.ac.fon.bg.ars.mapper.MessageMapper;
+import rs.ac.fon.bg.ars.model.Accommodation;
 import rs.ac.fon.bg.ars.model.AccommodationType;
 import rs.ac.fon.bg.ars.model.AccommodationUnit;
 import rs.ac.fon.bg.ars.util.ComponentTestBase;
+import rs.ac.fon.bg.ars.util.RabbitListenerTestComponent;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -26,6 +32,12 @@ public class AccommodationUnitComponentTest extends ComponentTestBase {
 
     @Autowired
     AccommodationUnitMapper mapper;
+
+    @Autowired
+    MessageMapper messageMapper;
+
+    @Autowired
+    RabbitListenerTestComponent rabbitListener;
 
     @Autowired
     WebTestClient webTestClient;
@@ -60,8 +72,9 @@ public class AccommodationUnitComponentTest extends ComponentTestBase {
         return AccommodationUnitDto.builder()
                 .name(unitName)
                 .accommodation(accommodationDto)
-                .description("Room for 2 persons")
                 .capacity(2)
+                .description("Room for 2 persons")
+
                 .build();
     }
 
@@ -100,9 +113,26 @@ public class AccommodationUnitComponentTest extends ComponentTestBase {
 
         accommodationUnitDto.setId(unitId);
 
+
+
+
         AccommodationUnitDto accommodationUnitResult = getAccommodationUnit(unitId);
 
         assertEquals(accommodationUnitDto.getName(),accommodationUnitResult.getName());
+
+        MQTransferObject<Object> object = null;
+        try{
+            rabbitListener.getMqObject().poll(1000, TimeUnit.MILLISECONDS);
+            object=rabbitListener.getMqObject().poll(1000, TimeUnit.MILLISECONDS);
+        }catch (InterruptedException e){
+            throw new RuntimeException(e);
+        }
+
+        AccommodationUnit accommodationUnit = messageMapper.accommodationUnitMessageDtoToEntity(
+                rabbitListener.hashMapToUnit((LinkedHashMap<?, ?>) object.getMessage()));
+        assertEquals(object.getEventType(),"INSERT");
+        assertEquals(object.getEntityType(),"AccommodationUnit");
+        assertEquals(accommodationUnit,mapper.domainToEntity(mapper.dtoToDomain(accommodationUnitResult)));
     }
 
     @Test
@@ -148,6 +178,20 @@ public class AccommodationUnitComponentTest extends ComponentTestBase {
 
         Assertions.assertNotNull(result);
 
+        MQTransferObject<Object> object = null;
+        try{
+            rabbitListener.getMqObject().poll(1000, TimeUnit.MILLISECONDS);
+            object=rabbitListener.getMqObject().poll(1000, TimeUnit.MILLISECONDS);
+        }catch (InterruptedException e){
+            throw new RuntimeException(e);
+        }
+
+        AccommodationUnit accommodationUnit = messageMapper.accommodationUnitMessageDtoToEntity(
+                rabbitListener.hashMapToUnit((LinkedHashMap<?, ?>) object.getMessage()));
+        assertEquals(object.getEventType(),"INSERT");
+        assertEquals(object.getEntityType(),"AccommodationUnit");
+        assertEquals(accommodationUnit,mapper.domainToEntity(mapper.dtoToDomain(result.get(0))));
+
         AccommodationUnitDtoUpdate accommodationUnitDtoUpdate = AccommodationUnitDtoUpdate.builder()
                 .id(unitId)
                 .name(updatedUnitName)
@@ -162,6 +206,19 @@ public class AccommodationUnitComponentTest extends ComponentTestBase {
                 .expectStatus().isOk();
 
         AccommodationUnitDto accommodationUnitResult = getAccommodationUnit(unitId);
+
+
+        try{
+            object=rabbitListener.getMqObject().poll(1000, TimeUnit.MILLISECONDS);
+        }catch (InterruptedException e){
+            throw new RuntimeException(e);
+        }
+
+        accommodationUnit = messageMapper.accommodationUnitMessageDtoToEntity(
+                rabbitListener.hashMapToUnit((LinkedHashMap<?, ?>) object.getMessage()));
+        assertEquals(object.getEventType(),"UPDATE");
+        assertEquals(object.getEntityType(),"AccommodationUnit");
+        assertEquals(accommodationUnit,mapper.domainToEntity(mapper.dtoToDomain(accommodationUnitResult)));
 
 
 
@@ -197,10 +254,37 @@ public class AccommodationUnitComponentTest extends ComponentTestBase {
 
         Assertions.assertNotNull(result);
 
+        MQTransferObject<Object> object = null;
+        try{
+            rabbitListener.getMqObject().poll(1000, TimeUnit.MILLISECONDS);
+            object=rabbitListener.getMqObject().poll(1000, TimeUnit.MILLISECONDS);
+        }catch (InterruptedException e){
+            throw new RuntimeException(e);
+        }
+
+        AccommodationUnit accommodationUnit = messageMapper.accommodationUnitMessageDtoToEntity(
+                rabbitListener.hashMapToUnit((LinkedHashMap<?, ?>) object.getMessage()));
+        assertEquals(object.getEventType(),"INSERT");
+        assertEquals(object.getEntityType(),"AccommodationUnit");
+        assertEquals(accommodationUnit,mapper.domainToEntity(mapper.dtoToDomain(result.get(0))));
+
         webTestClient.delete()
                 .uri("/rooms/{id}", unitId)
                 .exchange()
                 .expectStatus().isOk();
+
+
+        try{
+            object=rabbitListener.getMqObject().poll(1000, TimeUnit.MILLISECONDS);
+        }catch (InterruptedException e){
+            throw new RuntimeException(e);
+        }
+
+        accommodationUnit = messageMapper.accommodationUnitMessageDtoToEntity(
+                rabbitListener.hashMapToUnit((LinkedHashMap<?, ?>) object.getMessage()));
+        assertEquals(object.getEventType(),"DELETE");
+        assertEquals(object.getEntityType(),"AccommodationUnit");
+        assertEquals(accommodationUnit,mapper.domainToEntity(mapper.dtoToDomain(result.get(0))));
 
     }
 

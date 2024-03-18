@@ -8,14 +8,21 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import rs.ac.fon.bg.ars.dto.AccommodationDto;
 import rs.ac.fon.bg.ars.dto.AmenityDto;
+import rs.ac.fon.bg.ars.dto.message.MQTransferObject;
 import rs.ac.fon.bg.ars.dto.update.AccommodationDtoUpdate;
 import rs.ac.fon.bg.ars.mapper.AccommodationMapper;
 import rs.ac.fon.bg.ars.mapper.AmenityMapper;
+import rs.ac.fon.bg.ars.mapper.MessageMapper;
 import rs.ac.fon.bg.ars.model.AccommodationType;
+import rs.ac.fon.bg.ars.model.Address;
+import rs.ac.fon.bg.ars.model.Amenity;
 import rs.ac.fon.bg.ars.util.ComponentTestBase;
+import rs.ac.fon.bg.ars.util.RabbitListenerTestComponent;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -23,6 +30,12 @@ public class AmenityComponentTest extends ComponentTestBase {
 
     @Autowired
     AmenityMapper mapper;
+
+    @Autowired
+    MessageMapper messageMapper;
+
+    @Autowired
+    RabbitListenerTestComponent rabbitListener;
 
     @Autowired
     WebTestClient webTestClient;
@@ -91,6 +104,19 @@ public class AmenityComponentTest extends ComponentTestBase {
         AmenityDto amenityDtoResult = getAmenity(idFromDatabase);
 
         assertEquals(amenityDtoResult.getAmenity(), amenityDto.getAmenity());
+
+        MQTransferObject<Object> object = null;
+        try{
+            object=rabbitListener.getMqObject().poll(1000, TimeUnit.MILLISECONDS);
+        }catch (InterruptedException e){
+            throw new RuntimeException(e);
+        }
+
+        Amenity amenity = messageMapper.amenityMessageDtoToEntity(
+                rabbitListener.hashMapToAmenity((LinkedHashMap<?, ?>) object.getMessage()));
+        assertEquals(object.getEventType(),"INSERT");
+        assertEquals(object.getEntityType(),"Amenity");
+        assertEquals(amenity,mapper.domainToEntity(mapper.dtoToDomain(result.get(0))));
     }
 
     @Test
@@ -127,6 +153,19 @@ public class AmenityComponentTest extends ComponentTestBase {
 
         Assertions.assertNotNull(result);
 
+        MQTransferObject<Object> object = null;
+        try{
+            object=rabbitListener.getMqObject().poll(1000, TimeUnit.MILLISECONDS);
+        }catch (InterruptedException e){
+            throw new RuntimeException(e);
+        }
+
+        Amenity amenity = messageMapper.amenityMessageDtoToEntity(
+                rabbitListener.hashMapToAmenity((LinkedHashMap<?, ?>) object.getMessage()));
+        assertEquals(object.getEventType(),"INSERT");
+        assertEquals(object.getEntityType(),"Amenity");
+        assertEquals(amenity,mapper.domainToEntity(mapper.dtoToDomain(result.get(0))));
+
         AmenityDto amenityDtoUpdated = AmenityDto.builder()
                 .id(amenityId)
                 .amenity("Parking")
@@ -142,6 +181,18 @@ public class AmenityComponentTest extends ComponentTestBase {
 
         assertEquals(amenityDtoResult.getAmenity(),amenityDtoUpdated.getAmenity());
 
+        try{
+            object=rabbitListener.getMqObject().poll(1000, TimeUnit.MILLISECONDS);
+        }catch (InterruptedException e){
+            throw new RuntimeException(e);
+        }
+
+        amenity = messageMapper.amenityMessageDtoToEntity(
+                rabbitListener.hashMapToAmenity((LinkedHashMap<?, ?>) object.getMessage()));
+        assertEquals(object.getEventType(),"UPDATE");
+        assertEquals(object.getEntityType(),"Amenity");
+        assertEquals(amenity,mapper.domainToEntity(mapper.dtoToDomain(amenityDtoResult)));
+
     }
 
     @Test
@@ -153,23 +204,49 @@ public class AmenityComponentTest extends ComponentTestBase {
 
         amenityDto.setId(amenityId);
 
-        List<AccommodationDto> result
+        List<AmenityDto> result
                 = webTestClient.get()
                 .uri(AMENITY_URI + "?page=0")
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus().isOk()
-                .expectBodyList(new ParameterizedTypeReference<AccommodationDto>() {
+                .expectBodyList(new ParameterizedTypeReference<AmenityDto>() {
                 })
                 .returnResult()
                 .getResponseBody();
 
         Assertions.assertNotNull(result);
 
+        MQTransferObject<Object> object = null;
+        try{
+            object=rabbitListener.getMqObject().poll(1000, TimeUnit.MILLISECONDS);
+        }catch (InterruptedException e){
+            throw new RuntimeException(e);
+        }
+
+        Amenity amenity = messageMapper.amenityMessageDtoToEntity(
+                rabbitListener.hashMapToAmenity((LinkedHashMap<?, ?>) object.getMessage()));
+        assertEquals(object.getEventType(),"INSERT");
+        assertEquals(object.getEntityType(),"Amenity");
+        assertEquals(amenity,mapper.domainToEntity(mapper.dtoToDomain(result.get(0))));
+
+
         webTestClient.delete()
                 .uri(AMENITY_URI + "/{id}", amenityId)
                 .exchange()
                 .expectStatus().isOk();
+
+        try{
+            object=rabbitListener.getMqObject().poll(1000, TimeUnit.MILLISECONDS);
+        }catch (InterruptedException e){
+            throw new RuntimeException(e);
+        }
+
+        amenity = messageMapper.amenityMessageDtoToEntity(
+                rabbitListener.hashMapToAmenity((LinkedHashMap<?, ?>) object.getMessage()));
+        assertEquals(object.getEventType(),"DELETE");
+        assertEquals(object.getEntityType(),"Amenity");
+        assertEquals(amenity,mapper.domainToEntity(mapper.dtoToDomain(result.get(0))));
 
     }
 

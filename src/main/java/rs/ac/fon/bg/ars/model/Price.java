@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import rs.ac.fon.bg.ars.constraint.DateConstraint;
+import rs.ac.fon.bg.ars.eventListener.HibernateListener;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -20,6 +21,8 @@ import java.time.LocalDate;
 @Entity
 @Table(name="prices")
 @DateConstraint
+@EntityListeners(HibernateListener.class)
+
 public class Price {
 
     @Id

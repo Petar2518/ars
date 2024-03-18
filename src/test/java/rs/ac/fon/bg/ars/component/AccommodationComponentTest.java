@@ -8,13 +8,19 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import rs.ac.fon.bg.ars.dto.AccommodationDto;
 import rs.ac.fon.bg.ars.dto.AmenityDto;
+import rs.ac.fon.bg.ars.dto.message.MQTransferObject;
 import rs.ac.fon.bg.ars.dto.update.AccommodationDtoUpdate;
 import rs.ac.fon.bg.ars.mapper.AccommodationMapper;
+import rs.ac.fon.bg.ars.mapper.MessageMapper;
+import rs.ac.fon.bg.ars.model.Accommodation;
 import rs.ac.fon.bg.ars.model.AccommodationType;
 import rs.ac.fon.bg.ars.util.ComponentTestBase;
+import rs.ac.fon.bg.ars.util.RabbitListenerTestComponent;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -22,6 +28,12 @@ public class AccommodationComponentTest extends ComponentTestBase {
 
     @Autowired
     AccommodationMapper mapper;
+
+    @Autowired
+    MessageMapper messageMapper;
+
+    @Autowired
+    RabbitListenerTestComponent rabbitListener;
 
     @Autowired
     WebTestClient webTestClient;
@@ -93,6 +105,20 @@ public class AccommodationComponentTest extends ComponentTestBase {
         AccommodationDto accommodationDtoResult = getAccommodation(idFromDatabase);
 
         assertEquals(accommodationDtoResult.getName(), accommodationDto.getName());
+
+        MQTransferObject<Object> object = null;
+        try{
+            object=rabbitListener.getMqObject().poll(1000, TimeUnit.MILLISECONDS);
+        }catch (InterruptedException e){
+            throw new RuntimeException(e);
+        }
+
+        Accommodation accommodation = messageMapper.accommodationMessageDtoToEntity(
+                rabbitListener.hashMapToAccommodation((LinkedHashMap<?, ?>) object.getMessage()));
+                assertEquals(object.getEventType(),"INSERT");
+                assertEquals(object.getEntityType(),"Accommodation");
+                assertEquals(accommodation,mapper.domainToEntity(mapper.dtoToDomain(accommodationDtoResult)));
+
     }
 
     @Test
@@ -131,6 +157,19 @@ public class AccommodationComponentTest extends ComponentTestBase {
 
         Assertions.assertNotNull(result);
 
+        MQTransferObject<Object> object = null;
+        try{
+            object=rabbitListener.getMqObject().poll(1000, TimeUnit.MILLISECONDS);
+        }catch (InterruptedException e){
+            throw new RuntimeException(e);
+        }
+
+        Accommodation accommodation = messageMapper.accommodationMessageDtoToEntity(
+                rabbitListener.hashMapToAccommodation((LinkedHashMap<?, ?>) object.getMessage()));
+        assertEquals(object.getEventType(),"INSERT");
+        assertEquals(object.getEntityType(),"Accommodation");
+        assertEquals(accommodation,mapper.domainToEntity(mapper.dtoToDomain(result.get(0))));
+
         AccommodationDtoUpdate accommodationDtoUpdate = AccommodationDtoUpdate.builder()
                 .id(accommodationId)
                 .name(updatedName)
@@ -147,6 +186,20 @@ public class AccommodationComponentTest extends ComponentTestBase {
         AccommodationDto accommodationDtoResult = getAccommodation(accommodationId);
 
         assertEquals(accommodationDtoResult.getName(),accommodationDtoUpdate.getName());
+
+
+        try{
+            object=rabbitListener.getMqObject().poll(1000, TimeUnit.MILLISECONDS);
+        }catch (InterruptedException e){
+            throw new RuntimeException(e);
+        }
+
+        accommodation = messageMapper.accommodationMessageDtoToEntity(
+                rabbitListener.hashMapToAccommodation((LinkedHashMap<?, ?>) object.getMessage()));
+        assertEquals(object.getEventType(),"UPDATE");
+        assertEquals(object.getEntityType(),"Accommodation");
+        assertEquals(accommodation,mapper.domainToEntity(mapper.dtoToDomain(accommodationDtoResult)));
+
 
     }
 
@@ -169,6 +222,8 @@ public class AccommodationComponentTest extends ComponentTestBase {
         Long accommodationId = postAccommodation(accommodationDto);
 
         accommodationDto.setId(accommodationId);
+        am.setId(1L);
+        am2.setId(2L);
 
         List<AccommodationDto> result
                 = webTestClient.get()
@@ -183,10 +238,38 @@ public class AccommodationComponentTest extends ComponentTestBase {
 
         Assertions.assertNotNull(result);
 
+        MQTransferObject<Object> object = null;
+        try{
+            object=rabbitListener.getMqObject().poll(1000, TimeUnit.MILLISECONDS);
+        }catch (InterruptedException e){
+            throw new RuntimeException(e);
+        }
+
+        Accommodation accommodation = messageMapper.accommodationMessageDtoToEntity(
+                rabbitListener.hashMapToAccommodation((LinkedHashMap<?, ?>) object.getMessage()));
+        assertEquals(object.getEventType(),"INSERT");
+        assertEquals(object.getEntityType(),"Accommodation");
+        assertEquals(accommodation,mapper.domainToEntity(mapper.dtoToDomain(result.get(0))));
+
+
         webTestClient.delete()
                 .uri(ACCOMMODATION_URI + "/{id}", accommodationId)
                 .exchange()
                 .expectStatus().isOk();
+
+
+        try{
+            object=rabbitListener.getMqObject().poll(1000, TimeUnit.MILLISECONDS);
+        }catch (InterruptedException e){
+            throw new RuntimeException(e);
+        }
+
+         accommodation = messageMapper.accommodationMessageDtoToEntity(
+                rabbitListener.hashMapToAccommodation((LinkedHashMap<?, ?>) object.getMessage()));
+        assertEquals(object.getEventType(),"DELETE");
+        assertEquals(object.getEntityType(),"Accommodation");
+        assertEquals(accommodation,mapper.domainToEntity(mapper.dtoToDomain(result.get(0))));
+
 
     }
 

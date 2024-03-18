@@ -23,6 +23,7 @@ repositories {
 
 ext {
 	mapstructVersion = '1.5.5.Final'
+	jacksonVersion = '2.7.3'
 	testContainersVersion = '1.19.4'
 	openApiVersion = '2.3.0'
 }
@@ -35,9 +36,13 @@ dependencies {
 			'org.springframework.boot:spring-boot-starter-data-jpa',
 	 		'org.springframework.boot:spring-boot-starter-web',
 	 		'org.liquibase:liquibase-core',
+			'org.springframework.boot:spring-boot-starter-amqp',
 			'org.springframework.boot:spring-boot-starter-validation',
 	)
-	compileOnly 'org.projectlombok:lombok'
+	compileOnly (
+			'org.projectlombok:lombok',
+			"com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}"
+	)
 	runtimeOnly 'org.postgresql:postgresql'
 	annotationProcessor (
 			'org.projectlombok:lombok',
@@ -45,9 +50,13 @@ dependencies {
 	)
 	testImplementation (
 			'org.springframework.boot:spring-boot-starter-test',
+
+			"org.testcontainers:rabbitmq:${testContainersVersion}",
 			"org.testcontainers:junit-jupiter:${testContainersVersion}",
 			"org.testcontainers:postgresql:${testContainersVersion}",
-			"org.testcontainers:testcontainers:${testContainersVersion}"
+			"org.testcontainers:testcontainers:${testContainersVersion}",
+
+			'org.springframework.amqp:spring-rabbit-test'
 	)
 }
 

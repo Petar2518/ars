@@ -8,6 +8,11 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    username: ${RABBITMQ_USERNAME:user}
+    password: ${RABBITMQ_PASSWORD:pass}
+    port: ${RABBITMQ_PORT:5672}
 api:
   title: "Automatizacija razvoja softvera - projektni rad"
   description: "Projektni rad za predmet automatizacija razvoja softvera 
@@ -17,3 +22,27 @@ api:
     name: "Petar Milenkovic 3822/2023"
     email: "pm20233822@student.fon.bg.ac.rs"
     url: "https://github.com/Petar2518"
+rabbitmq:
+  crud-operations:
+    direct-exchange:
+      name:
+        "Accommodation-CRUD-Exchange"
+      routing-key:
+        "accommodation.details.change"
+correspondingMapperForClass:
+  rs:
+    ac:
+      fon:
+        bg:
+          ars:
+            model:
+              Accommodation:
+                "accommodationEntityToMessageDto"
+              AccommodationUnit:
+                "accommodationUnitEntityToMessageDto"
+              Address:
+                "addressEntityToMessageDto"
+              Amenity:
+                "amenityEntityToMessageDto"
+              Price:
+                "priceEntityToMessageDto"
